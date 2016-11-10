@@ -1,5 +1,6 @@
-from flask import Flask, render_template, make_response, redirect
+from flask import Flask, render_template, render_template_string, make_response, redirect
 from flask.ext.restful import Api, Resource, reqparse, abort
+#source .venv/bin/activate
 
 import json
 import string
@@ -14,7 +15,6 @@ PRIORITIES = ('closed', 'low', 'normal', 'high')
 # This simply loads the data from our "database," which is just a JSON file.
 with open('data.jsonld') as data:
     data = json.load(data)
-
 
 # Generate a unique ID for a new help request.
 # By default this will consist of six lowercase numbers and letters.
@@ -103,6 +103,8 @@ query_parser.add_argument(
     'sort_by', type=str, choices=('priority', 'time'), default='time')
 
 
+
+
 # Define our help request resource.
 class HelpRequest(Resource):
 
@@ -171,10 +173,22 @@ class HelpRequestListAsJSON(Resource):
     def get(self):
         return data
 
+#Define greeting resource.
+
+name_parser = reqparse.RequestParser()
+name_parser.add_argument('name', type=str, default='Bob')
+class Greeting(Resource):
+    def get(self):
+        args = name_parser.parse_args()
+        response = make_response(render_template_string('Hello {{ x }}!', x=args['name']))
+           
+        response.headers['Content-Type'] = 'text/plain'
+        return response
 
 # Assign URL paths to our resources.
 app = Flask(__name__)
 api = Api(app)
+api.add_resource(Greeting, '/greeting/')
 api.add_resource(HelpRequestList, '/requests')
 api.add_resource(HelpRequestListAsJSON, '/requests.json')
 api.add_resource(HelpRequest, '/request/<string:helprequest_id>')
